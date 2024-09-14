@@ -40,10 +40,9 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         DEBUG: ${{ secrets.DEBUG }}
         ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
-      run: |
-        python -m flake8 backend/
+      run: python -m flake8 backend/
     - name: Django tests
-      run:
+      run: |
         cd backend/
         python manage.py test
 
