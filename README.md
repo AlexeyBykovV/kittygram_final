@@ -1,26 +1,88 @@
-#  Как работать с репозиторием финального задания
+# Kittygram — социальная сеть для обмена фотографиями любимых питомцев. 
+# Запуск проекта Kittygram в контейнерах и CI/CD с помощью GitHub Actions.
 
-## Что нужно сделать
+## Описание проекта
 
-Настроить запуск проекта Kittygram в контейнерах и CI/CD с помощью GitHub Actions
+Kittygram - социальная сеть для обмена фотографиями любимых питомцев, а менно котов и кошек с публикацией их достижений.
 
-## Как проверить работу с помощью автотестов
+В проекте настроен деплой проекта черпез СI/CD с помощью GitHub Actions, в ходе которого:
+- проверять код бэкенда в репозитории на соответствие PEP8;
+- запускает тесты для фронтенда и бэкенда;
+- собирает образы проекта и отправляет их на Docker Hub:
+- обновляет образы на сервере и перезапускает приложение при помощи Docker Compose;
+- выполняет команды для сборки статики в приложении бэкенда, переносить статику в volume; выполняет миграции;
+- извещает вас в Telegram об успешном завершении деплоя.
 
-В корне репозитория создайте файл tests.yml со следующим содержимым:
-```yaml
-repo_owner: ваш_логин_на_гитхабе
-kittygram_domain: полная ссылка (https://доменное_имя) на ваш проект Kittygram
-taski_domain: полная ссылка (https://доменное_имя) на ваш проект Taski
-dockerhub_username: ваш_логин_на_докерхабе
+### Зависимости
+- Python 3.9
+- Django 3.2.3
+- Django REST framework 3.12.4
+- Gunicorn
+- Nginx
+- PostgreSQL
+- Docker
+- GitHub Action
+
+### Переменных окружения
+
+Пример файла .env c переменными окружения, необходимыми для запуска приложения
+```
+POSTGRES_USER=kittygram_user
+POSTGRES_PASSWORD=kittygram_password
+POSTGRES_DB=kittygram_db
+DB_HOST=db
+DB_PORT=5432
+SECRET_KEY=django_secret_key
+ALLOWED_HOSTS=hosts
+DEBUG=True
 ```
 
-Скопируйте содержимое файла `.github/workflows/main.yml` в файл `kittygram_workflow.yml` в корневой директории проекта.
+## Запуск через DockerHUB на удаленном сервере
 
-Для локального запуска тестов создайте виртуальное окружение, установите в него зависимости из backend/requirements.txt и запустите в корневой директории проекта `pytest`.
+На удаленном сервере создаем папку проекта `kittygram` и переходим в нее:
+```
+mkdir kittygram
+cd kittygram
+```
 
-## Чек-лист для проверки перед отправкой задания
+В папку проекта `kittygram` копируем файл `docker-compose.production.yml` и запускаем его:
+```
+sudo docker compose -f docker-compose.production.yml up
+```
 
-- Проект Taski доступен по доменному имени, указанному в `tests.yml`.
-- Проект Kittygram доступен по доменному имени, указанному в `tests.yml`.
-- Пуш в ветку main запускает тестирование и деплой Kittygram, а после успешного деплоя вам приходит сообщение в телеграм.
-- В корне проекта есть файл `kittygram_workflow.yml`.
+Будет выполнено:
+1. Скачивание образов с DockerHub
+2. Развернуты контейнеры отвечающие за `db`, `backend`, `frontend`, `gateway` и созданы volume `pg_data`, `static`, `media`.
+3. Установлены необходимые звисимости
+
+## Запуск через GitHub на локальном устройстве
+
+Клонируем репозиторий: 
+```
+git clone git@github.com:AlexeyBykovV/kittygram_final.git
+```
+
+Выполняем запуск:
+```
+sudo docker compose -f docker-compose.yml up
+```
+
+Выполняем сбор статистики и миграцию для бэкенда. Статистика фронтенда собирается во время запуска контейнера, после чего он останавливается. 
+```
+sudo docker compose -f [имя-файла-docker-compose.yml] exec backend python manage.py migrate
+sudo docker compose -f [имя-файла-docker-compose.yml] exec backend python manage.py collectstatic
+sudo docker compose -f [имя-файла-docker-compose.yml] exec backend cp -r /app/collected_static/. /static/static/
+```
+
+Проект доступен по адресу:
+```
+http://localhost:9000/
+```
+
+## Остановка проекта Kittygram
+
+В терминале в котором был запущен проект нажать комбинацию клавищ `Ctrl+С`, либо в доступном терминале ввести команду:
+```
+sudo docker compose -f docker-compose.yml down
+```
+
